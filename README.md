@@ -12,10 +12,9 @@ There are many implications of doing this, some of them are:
 - Download / Upload speeds will be incredibly slow
 - You will find yourself doing Captch responses quite a bit
 - ping (and any other ICMP packets) will not function
-- Many sites will think that you are in a random country that is not your own
---> So language settings might be wrong. 
---> You can fix this by limiting the exit node for tor to use.
---> Edit /usr/local/etc/tor/torrc and add the following to the end
+- Many sites will think that you are in a random country that is not your own, so language settings might be wrong. 
+- You can fix this by limiting the exit node for tor to use.
+- Edit /usr/local/etc/tor/torrc and add the following to the end
 ```
 ExitNodes {us},{gb}
 ```
