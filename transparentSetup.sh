@@ -295,7 +295,14 @@ EOF
 systemctl enable go-transparent
 
 echo "DONE!"
-echo "BEFORE REBOOTING... Change your wireless / wired profile from DHCP to DHCP Address Only in Network Manager"
+echo
+echo "BEFORE REBOOTING... Change your wireless / wired profile"
+echo "from DHCP to DHCP Address Only in Network Manager"
+echo "ALSO! DISABLE IPv6 for your wireless / wired profile by selecting 'Ignore'"
+echo
+echo "This script has not done this so that you understand that new profiles"
+echo "will require these changes"
+echo
 echo "Time to reboot and see if everything gets started ok!"
 
 #### Add Tor Browser bundle download
