@@ -75,7 +75,7 @@ wget $RELEASE_URL
 echo "Pulling Tor signers key"
 gpg --keyserver pgp.mit.edu --recv-keys 0xFE43009C4607B1FB
 wget ${RELEASE_URL}.asc
-gpg --verify ${VER}.asc
+gpg --verify ${RELEASE_VER}.asc
 if [[ $? -ne 0 ]]; then
   echo "GPG Verification failure..."
   echo "This probably is a false positive, but it is safer to exit."
