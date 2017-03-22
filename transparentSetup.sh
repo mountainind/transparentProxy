@@ -1,7 +1,7 @@
 #!/bin/bash
 # License: BSD
 # A script to take Ubuntu 16.04 stock -> fully transparent Tor for all traffic
-# Run this script as ROOT!
+# Run this script as ROOT (sudo is fine)!
 
 EffectiveUser=`whoami`
 echo "Verifying User..."
@@ -34,8 +34,17 @@ echo "All pre-checks passed!"
 echo "-------------------------------------------------------------------"
 echo "                             !WARNING!                             "
 echo "-------------------------------------------------------------------"
+echo "This sript will drastically alter your OS. It will re-route all"
+echo "traffic out Tor. If you don't know what this means, don't do it."
+echo
+echo "This script will do the following:"
+echo "- Install chromium (chrome without flash)"
+echo "- Install IPTables (ufw has some limitations)"
+echo "- Install necessary development / build requirements"
+echo "- Build + Install the latest tor daemon"
+echo "- Install systemd scripts for tor + iptables rules"
 while true; do
-  read -p "Are you sure you want to continue?" yn
+  read -p "Are you sure you want to continue? (Y/N) " yn
   case $yn in
     [Yy]* ) echo "We begin..."; break;;
     [Nn]* ) exit;;
@@ -59,14 +68,28 @@ if [[ $RELEASE_VER == "" ]]; then
 fi
 echo "Version $RELEASE_VER Found! Downloading..."
 RELEASE_URL="https://dist.torproject.org/${RELEASE_VER}"
+VER=`echo $RELEASE_VER|sed 's/\.tar\.gz//'`
 wget $RELEASE_URL
-#####################
-# INSERT PGP Verification here!
-#
+
+# GPG Verify
+echo "Pulling Tor signers key"
+gpg --keyserver pgp.mit.edu --recv-keys 0xFE43009C4607B1FB
+wget ${RELEASE_URL}.asc
+gpg --verify ${VER}.asc
+if [[ $? -ne 0 ]]; then
+  echo "GPG Verification failure..."
+  echo "This probably is a false positive, but it is safer to exit."
+  read -p "Continue anyway? (Y/N) " yn
+  case $yn in
+    [Yy]* ) echo "OK, continuing.";;
+    [Nn]* ) exit;;
+    * ) exit;;
+  esac
+fi
+
 echo "Expanding..."
 tar zxvf ./${RELEASE_VER}
 echo "Configuring Tor..."
-VER=`echo $RELEASE_VER|sed 's/\.tar\.gz//'`
 cd ./${VER}
 ./configure --with-tor-user=debian-tor
 if [[ $? -ne 0 ]]; then
