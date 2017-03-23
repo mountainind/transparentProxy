@@ -53,7 +53,7 @@ while true; do
 done
 
 echo "Beginning package install..."
-apt-get -y install vim chromium-browser libevent-dev libssl-dev iptables-persistent wget
+apt-get -y install vim chromium-browser libevent-dev libssl-dev iptables-persistent wget gcc
 
 echo "Creating tor user..."
 useradd -d /var/lib/tor -u 122 debian-tor
