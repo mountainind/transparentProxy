@@ -3,6 +3,36 @@
 # A script to take Ubuntu 16.04 stock -> fully transparent Tor for all traffic
 # Run this script as ROOT (sudo is fine)!
 
+# Cleanup function
+function cleanup (){
+  echo "Note that dependencies of tor will not be removed..."
+  echo "Stopping tor..."
+  systemctl stop tor
+  systemctl disable tor
+  systemctl disable go-transparent
+  rm /lib/systemd/system/go-transparent.service
+  rm /lib/systemd/system/tor.service
+  rm /usr/local/bin/torTables.sh
+  VERSION=`tor --version |awk '{print $3}'`
+  cd /opt/tor-${VERSION}
+  make uninstall
+  echo "Returning normal network connectity (in iptables)"
+  iptables-restore </etc/iptables/rules.v4
+  userdel debian-tor
+  rm -rf /opt/tor${VERSION}
+  echo "Editing Kernel Params..."
+  sed -i 's/net.ipv4.ip_forward=0//' /etc/sysctl.conf
+  sysctl -p
+
+  echo "Enabling dnsmasq..."
+  sed -i 's/\#dns=/dns=/' /etc/NetworkManager/NetworkManager.conf
+
+  echo "Removing DNS override..."
+  echo "You'll want to change your NetworkManager profile to NOT be address only"
+  sed -i 's/nameserver 127\.0\.0\.1//' /etc/resolvconf/resolv.conf.d/head
+  echo "Then you'll need to restart NetworkManager - or just reboot"
+  echo "Done..."
+}
 EffectiveUser=`whoami`
 echo "Verifying User..."
 if [[ $EffectiveUser != root ]]; then
@@ -10,10 +40,24 @@ if [[ $EffectiveUser != root ]]; then
   echo "Please re-run with sudo..."
   exit
 fi
+if [[ $1 == "-?" ]]; then
+  echo "This script is used to modify your networking stack to route all traffic"
+  echo "over Tor. If you have already run this script, and would like to remove"
+  echo "all traces of it, simply pass -r"
+elif [[ $1 == "-r" ]]; then
+  echo "Would you like to remove all traces of transparentProxy from your system?"
+  echo -n "[Y/N]: "
+  read prompt
+  if [[ $prompt == "Y" || $prompt == "y" ]]; then
+    echo "Clearing out transparentProxy..."
+    cleanup
+    exit
+  fi
+fi
 # Verify the Disk is encrypted
 echo "Verifying Encryption availability..."
 EncryptedStatus=`dmsetup status`
-if [[ $EncryptedStatus == "No devices found" ]]; then
+if [[ $EncryptedStatus == "No devices found" || $EncryptedStatus == "" ]]; then
   echo "ERROR! You haven't encrypted your disk during the install..."
   echo "It is HIGHLY recommended that you start over and select encryption"
   echo "during the install process."
@@ -53,13 +97,13 @@ while true; do
 done
 
 echo "Beginning package install..."
-apt-get -y install vim chromium-browser libevent-dev libssl-dev iptables-persistent wget gcc
+apt-get -y install vim chromium-browser libevent-dev libssl-dev iptables-persistent wget gcc make
 
 echo "Creating tor user..."
 useradd -d /var/lib/tor -u 122 debian-tor
 
 echo "Finding Latest Tor..."
-cd /tmp
+cd /opt
 wget -q -O tmp.html https://dist.torproject.org/
 RELEASE_VER=`cat tmp.html |grep -o -E "tor[^<>]*?[0-9]+.tar.gz"|sort -t . -n -k 2,2n -k 3,3n -k 4,4n|tail -1`
 if [[ $RELEASE_VER == "" ]]; then
